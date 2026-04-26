@@ -17,7 +17,7 @@ interface BottomNavProps {
 }
 
 const NAV_ITEMS: Array<{ key: NavKey; href: string; icon: typeof Home; label: string; match: (p: string) => boolean }> = [
-  { key: 'home',   href: '/home',  icon: Home,       label: '내 방', match: (p) => p === '/home' || p === '/' },
+  { key: 'home',   href: '/',      icon: Home,       label: '내 방', match: (p) => p === '/' },
   { key: 'inbox',  href: '/inbox', icon: Bell,       label: '인증', match: (p) => p.startsWith('/inbox') },
   { key: 'tasks',  href: '/tasks', icon: Edit3,      label: '항목', match: (p) => p.startsWith('/tasks') },
   { key: 'stats',  href: '/stats', icon: TrendingUp, label: '파티', match: (p) => p.startsWith('/stats') || p.startsWith('/activity') },

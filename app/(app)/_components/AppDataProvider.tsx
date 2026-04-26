@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import {
+  createContext, useContext, useEffect, useState, useCallback, useMemo,
+} from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getMyProfile, getPartyMemberProfiles } from '@/lib/db/profile';
 import { getMyParty } from '@/lib/db/party';
@@ -14,7 +16,7 @@ import { getMyNotificationSettings } from '@/lib/db/notifications';
 import { getMyTotals } from '@/lib/db/user_totals';
 import type {
   Profile, Party, Task, Verification, Activity,
-  Score, Streak, UserBadge, NotificationSettings, UserTotals
+  Score, Streak, UserBadge, NotificationSettings, UserTotals,
 } from '@/types/app';
 
 export interface AppData {
@@ -32,10 +34,34 @@ export interface AppData {
   totals: UserTotals | null;
 }
 
-export function useAppData() {
+interface AppDataContextValue {
+  data: AppData | null;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
+  saving: boolean;
+  toast: string | null;
+  apiError: string | null;
+  showToast: (msg: string) => void;
+  withSaving: (fn: () => Promise<void>) => Promise<void>;
+}
+
+const AppDataContext = createContext<AppDataContextValue | null>(null);
+
+export function useAppData(): AppDataContextValue {
+  const ctx = useContext(AppDataContext);
+  if (!ctx) throw new Error('useAppData must be used within AppDataProvider');
+  return ctx;
+}
+
+export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,7 +78,7 @@ export function useAppData() {
       if (!party) throw new Error('파티를 찾을 수 없어요');
 
       const [
-        members, tasks, verifications, activity, scores, streak, badges, notifications, totals
+        members, tasks, verifications, activity, scores, streak, badges, notifications, totals,
       ] = await Promise.all([
         getPartyMemberProfiles(supabase, party.id),
         listTasks(supabase, party.id),
@@ -90,5 +116,25 @@ export function useAppData() {
     load();
   }, [load]);
 
-  return { data, loading, error, reload: load };
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const withSaving = useCallback(async (fn: () => Promise<void>) => {
+    setSaving(true);
+    setApiError(null);
+    try { await fn(); }
+    catch (e) {
+      setApiError((e as Error).message);
+      setTimeout(() => setApiError(null), 3500);
+    } finally { setSaving(false); }
+  }, []);
+
+  const value = useMemo<AppDataContextValue>(() => ({
+    data, loading, error, reload: load,
+    saving, toast, apiError, showToast, withSaving,
+  }), [data, loading, error, load, saving, toast, apiError, showToast, withSaving]);
+
+  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

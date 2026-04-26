@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { AppShell } from './_components/AppShell';
 
-export default async function RootPage() {
+export default async function AppGroupLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  // Middleware should have already redirected if unauthenticated, but double-check
   if (!user) redirect('/login');
 
   const { data: profile } = await supabase
@@ -15,5 +14,6 @@ export default async function RootPage() {
     .single() as any;
 
   if (!profile?.onboarded) redirect('/onboarding');
-  redirect('/home');
+
+  return <AppShell>{children}</AppShell>;
 }

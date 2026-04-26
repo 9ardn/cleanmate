@@ -76,17 +76,29 @@ export async function rejectVerification(
 }
 
 /**
- * Upload a photo to Supabase Storage and return the public/signed URL.
- * Use this in production. For MVP, photo_placeholder works fine.
+ * Compress (max 1920px, ~1.2MB target) then upload to Supabase Storage.
+ * Returns the public URL.
  */
 export async function uploadVerificationPhoto(
   supabase: any,
   file: File,
-  userId: string
+  userId: string,
+  onProgress?: (phase: 'compressing' | 'uploading') => void,
 ): Promise<string> {
+  onProgress?.('compressing');
+  const { default: imageCompression } = await import('browser-image-compression');
+  const compressed = await imageCompression(file, {
+    maxWidthOrHeight: 1920,
+    maxSizeMB: 1.2,
+    useWebWorker: true,
+    fileType: 'image/jpeg',
+    initialQuality: 0.85,
+  });
+
+  onProgress?.('uploading');
   const path = `${userId}/${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from('verifications').upload(path, file, {
-    contentType: file.type || 'image/jpeg',
+  const { error } = await supabase.storage.from('verifications').upload(path, compressed, {
+    contentType: 'image/jpeg',
     upsert: false,
   });
   if (error) throw error;

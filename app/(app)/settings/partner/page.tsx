@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { useAppData } from '../../_components/AppDataProvider';
 import { useAppTheme } from '../../_components/useAppTheme';
-import { ShareModal } from '../../_components/ShareModal';
+import { ShareModal } from '@/components/modals/ShareModal';
 
 export default function SettingsPartnerPage() {
   const router = useRouter();

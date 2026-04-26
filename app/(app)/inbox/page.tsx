@@ -7,14 +7,14 @@ import { useAppData } from '../_components/AppDataProvider';
 import { useAppTheme } from '../_components/useAppTheme';
 import { createClient } from '@/lib/supabase/client';
 import { approveVerification, rejectVerification } from '@/lib/db/verifications';
-import { REJECT_REASONS } from '@/lib/constants';
 import { formatShortDateTime } from '@/lib/utils/date';
+import { RejectDialog } from '@/components/modals/RejectDialog';
 import type { Verification } from '@/types/app';
 
 export default function InboxPage() {
   const router = useRouter();
   const { data, reload, saving, withSaving, showToast } = useAppData();
-  const { t, cardBg, bgInner } = useAppTheme();
+  const { t, cardBg } = useAppTheme();
 
   const [rejectingVerif, setRejectingVerif] = useState<Verification | null>(null);
 
@@ -95,12 +95,29 @@ export default function InboxPage() {
                   </div>
                 </div>
               </div>
-              <div
-                className="aspect-video rounded-xl flex items-center justify-center mb-3 text-5xl"
-                style={{ background: `linear-gradient(135deg, ${t.accent}30, ${t.accentDark}40)` }}
-              >
-                {verif.photo_placeholder ?? verif.task?.emoji ?? '📸'}
-              </div>
+              {(() => {
+                const photo = verif.photo_url ?? verif.photo_placeholder;
+                const isUrl = typeof photo === 'string' && /^https?:\/\//.test(photo);
+                if (isUrl) {
+                  return (
+                    <div
+                      className="aspect-video rounded-xl overflow-hidden mb-3"
+                      style={{ background: '#000' }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo as string} alt="인증 사진" className="w-full h-full object-cover" />
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    className="aspect-video rounded-xl flex items-center justify-center mb-3 text-5xl"
+                    style={{ background: `linear-gradient(135deg, ${t.accent}30, ${t.accentDark}40)` }}
+                  >
+                    {photo ?? verif.task?.emoji ?? '📸'}
+                  </div>
+                );
+              })()}
               <div className="flex gap-2">
                 <button
                   onClick={() => setRejectingVerif(verif)}
@@ -149,39 +166,12 @@ export default function InboxPage() {
         )}
       </div>
 
-      {rejectingVerif && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setRejectingVerif(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[430px] rounded-t-3xl p-6 animate-slide-up"
-            style={{ background: bgInner }}
-          >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: `${t.accent}30` }} />
-            <div className="text-base font-bold mb-1">왜 다시 해야 할까요?</div>
-            <div className="text-xs opacity-60 mb-4">{rejectingVerif.task?.name} 인증을 반려해요</div>
-            <div className="space-y-2">
-              {REJECT_REASONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => handleReject(r)}
-                  disabled={saving}
-                  className="w-full text-left p-3.5 rounded-xl text-sm font-bold disabled:opacity-50"
-                  style={{ background: `${t.accent}15`, color: t.text }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setRejectingVerif(null)} className="w-full p-3 mt-3 rounded-xl text-xs opacity-60">
-              취소
-            </button>
-          </div>
-        </div>
-      )}
+      <RejectDialog
+        verif={rejectingVerif}
+        busy={saving}
+        onClose={() => setRejectingVerif(null)}
+        onReject={handleReject}
+      />
     </div>
   );
 }

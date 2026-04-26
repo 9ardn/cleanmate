@@ -116,6 +116,33 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     load();
   }, [load]);
 
+  // Realtime: re-fetch when verifications change in the current party.
+  // INSERTs surface new pending requests in the inbox badge instantly,
+  // UPDATEs (approved/rejected) refresh score/streak/activity in the home view.
+  useEffect(() => {
+    const partyId = data?.party.id;
+    if (!partyId) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`verifications:${partyId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'verifications',
+          filter: `party_id=eq.${partyId}`,
+        },
+        () => { load(); },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [data?.party.id, load]);
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);

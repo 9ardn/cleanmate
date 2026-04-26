@@ -1,267 +1,223 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Bell, Flame, Clock, ChevronRight, Share2, Check, Users,
-} from 'lucide-react';
-import { useAppData } from './_components/AppDataProvider';
-import { useAppTheme } from './_components/useAppTheme';
-import { ShareModal } from './_components/ShareModal';
-import { LivingRoom } from '@/components/LivingRoom';
-import { getDaysSince } from '@/lib/domain/score';
-import { getLevel } from '@/lib/domain/level';
-import type { Task } from '@/types/app';
+import { Avatar } from '@/components/ui/Avatar';
+import { CleanlinessBar } from '@/components/ui/CleanlinessBar';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { TaskIcon } from '@/components/ui/TaskIcon';
+import { IsometricRoom } from '@/components/room/IsometricRoom';
+import { useTweaks } from './_components/TweaksProvider';
+import type { TaskKind } from '@/lib/constants';
+
+interface TodayTask {
+  id: TaskKind;
+  name: string;
+  who: string;
+  due: string;
+  priority: 'high' | 'mid' | 'low';
+}
+
+const TODAY: TodayTask[] = [
+  { id: 'floor',  name: '바닥 청소',     who: '나',   due: '오늘', priority: 'high' },
+  { id: 'dishes', name: '설거지',         who: '룸메', due: '오늘', priority: 'high' },
+  { id: 'trash',  name: '쓰레기 비우기', who: '나',   due: '내일', priority: 'mid' },
+];
 
 export default function HomePage() {
   const router = useRouter();
-  const { data } = useAppData();
-  const { score, state, t, cardBg } = useAppTheme();
-  const [showShareModal, setShowShareModal] = useState(false);
-
-  const me = data!.profile;
-
-  const pendingForMe = useMemo(
-    () => data!.verifications.filter((v) => v.status === 'pending' && v.requested_by !== data!.userId),
-    [data],
-  );
-  const sentByMe = useMemo(
-    () => data!.verifications.filter((v) => v.status === 'pending' && v.requested_by === data!.userId),
-    [data],
-  );
-  const myScore = useMemo(
-    () => data!.scores.find((s) => s.user_id === data!.userId)?.score ?? 0,
-    [data],
-  );
-  const myLevel = useMemo(() => getLevel(myScore), [myScore]);
-
-  function handleCompleteTask(task: Task) {
-    router.push(`/camera/${task.id}`);
-  }
+  const { tweaks } = useTweaks();
+  const { state, score, pose } = tweaks;
 
   return (
-    <div className="animate-fade-in pb-24">
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <Link
-          href="/me"
-          className="flex items-center gap-2 active:scale-95 transition-transform"
-        >
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
-            style={{ background: t.accent, color: '#FFFBF5' }}
-          >
-            {me?.emoji}
-          </div>
-          <div className="text-left">
-            <div className="text-[11px] opacity-60 leading-none">
-              Lv.{myLevel.level} {myLevel.title}
+    <div className="app-screen">
+      <div
+        style={{
+          padding: '14px 18px 8px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0,
+          zIndex: 10,
+          position: 'relative',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Avatar name="민지" color="#5B8DB8" size={32} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>민지의 방</div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.06em' }}>
+              WED · APR 26
             </div>
-            <div className="text-sm font-bold leading-tight">{me?.name} 님</div>
           </div>
-        </Link>
-        <div className="flex items-center gap-2">
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <StatusPill state={state} />
           <button
-            onClick={() => setShowShareModal(true)}
-            className="p-2 rounded-xl active:scale-90 transition-transform"
-            style={{ background: `${t.accent}15` }}
-          >
-            <Share2 size={18} style={{ color: t.text }} />
-          </button>
-          <Link
-            href="/inbox"
-            className="relative p-2 rounded-xl active:scale-90 transition-transform"
-            style={{ background: `${t.accent}15` }}
-          >
-            <Bell size={18} style={{ color: t.text }} />
-            {pendingForMe.length > 0 && (
-              <span
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center animate-bounce-in"
-                style={{ background: t.accent, color: '#FFFBF5' }}
-              >
-                {pendingForMe.length}
-              </span>
-            )}
-          </Link>
-          <div
-            className="flex items-center gap-1 px-3 py-2 rounded-xl"
-            style={{ background: t.accent, color: '#FFFBF5' }}
-          >
-            <Flame size={16} />
-            <span className="text-sm font-bold">{data!.streak?.current ?? 0}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-5 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">{t.moodEmoji}</span>
-            <div>
-              <div className="text-[11px] opacity-60 leading-none">우리 집 상태</div>
-              <div className="text-base font-bold leading-tight">{t.mood}</div>
-            </div>
-          </div>
-          <div className="text-3xl font-black tracking-tight font-display" style={{ color: t.accent }}>
-            {score}
-          </div>
-        </div>
-        <div className="relative h-2.5 rounded-full overflow-hidden" style={{ background: `${t.accent}20` }}>
-          <div
-            className="absolute inset-y-0 left-0 rounded-full"
+            onClick={() => router.push('/settings')}
+            aria-label="설정"
             style={{
-              width: `${score}%`,
-              background: `linear-gradient(90deg, ${t.accent} 0%, ${t.accentDark} 100%)`,
-              transition: 'width 1000ms cubic-bezier(0.4, 0, 0.2, 1)',
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'var(--bg-paper)', border: '1px solid var(--line)',
+              cursor: 'pointer',
             }}
-          />
-        </div>
-      </div>
-
-      <div className="px-3 py-2">
-        <LivingRoom state={state} />
-      </div>
-
-      <div className="px-5 mt-2">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold">오늘의 할 일</h2>
-          <Link
-            href="/tasks"
-            className="text-[11px] opacity-70 flex items-center gap-0.5 px-2 py-1 rounded-md"
-            style={{ background: `${t.accent}15` }}
           >
-            관리 <ChevronRight size={11} />
-          </Link>
-        </div>
-
-        {data!.tasks.length === 0 && (
-          <div className="text-center py-8 rounded-2xl" style={{ background: cardBg }}>
-            <div className="text-4xl mb-2">🎉</div>
-            <div className="text-sm font-bold mb-1">청소 항목이 없어요</div>
-            <div className="text-xs opacity-60 mb-3">첫 항목을 추가해보세요</div>
-            <Link
-              href="/tasks/new"
-              className="inline-block px-4 py-2 rounded-xl text-xs font-bold"
-              style={{ background: t.accent, color: '#FFFBF5' }}
-            >
-              + 청소 항목 추가
-            </Link>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {data!.tasks.map((task, idx) => {
-            const daysSince = getDaysSince(task.last_done_at);
-            const isDone = task.last_done_at && Date.now() - new Date(task.last_done_at).getTime() < 24 * 3600 * 1000;
-            const isPending = [...sentByMe, ...pendingForMe].some((v) => v.task_id === task.id);
-            const isOverdue = daysSince > task.cycle;
-            const isAssigned = !task.assigned_to || task.assigned_to === data!.userId;
-
-            return (
-              <button
-                key={task.id}
-                onClick={() => !isDone && !isPending && isAssigned && handleCompleteTask(task)}
-                disabled={Boolean(isDone) || isPending || !isAssigned}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl transition-all active:scale-[0.98] text-left animate-slide-up"
-                style={{
-                  background: isDone ? `${t.accent}20` : cardBg,
-                  border: `1.5px solid ${isOverdue ? t.accent : 'transparent'}`,
-                  opacity: isDone ? 0.5 : !isAssigned ? 0.6 : 1,
-                  animationDelay: `${idx * 60}ms`,
-                }}
-              >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                  style={{ background: isDone ? t.accent : `${t.accent}15` }}
-                >
-                  {isDone ? <Check size={20} color="#FFFBF5" /> : task.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-[15px] truncate">{task.name}</span>
-                    {isOverdue && !isDone && (
-                      <span
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
-                        style={{ background: t.accent, color: '#FFFBF5' }}
-                      >
-                        밀림
-                      </span>
-                    )}
-                    {isPending && (
-                      <span
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5"
-                        style={{ background: `${t.accent}30`, color: t.accent }}
-                      >
-                        <Clock size={8} /> 확인대기
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] opacity-60 mt-0.5 flex items-center gap-2">
-                    <span>
-                      {!task.assigned_to
-                        ? '👥 공동'
-                        : task.assigned_to === data!.userId
-                        ? '⭐ 내 담당'
-                        : `🤝 ${data!.members.find((m) => m.id === task.assigned_to)?.name ?? '파트너'}`}
-                    </span>
-                    <span>·</span>
-                    <span>{task.cycle}일 주기</span>
-                    {daysSince > 0 && (
-                      <>
-                        <span>·</span>
-                        <span>{daysSince}일 경과</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {!isDone && !isPending && isAssigned && (
-                  <ChevronRight size={18} style={{ color: t.accent }} className="flex-shrink-0" />
-                )}
-              </button>
-            );
-          })}
+            ⚙
+          </button>
         </div>
       </div>
 
-      <div className="px-5 mt-5">
-        <Link
-          href="/stats"
-          className="block w-full rounded-2xl p-4 active:scale-[0.98] transition-transform"
-          style={{ background: cardBg }}
+      <div style={{ flex: '0 0 360px', position: 'relative', overflow: 'hidden' }}>
+        <IsometricRoom state={state} pose={pose} scale={1.0} />
+        <div
+          style={{
+            position: 'absolute', top: 10, right: 14, zIndex: 5,
+            background: 'rgba(244, 247, 251, 0.92)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid var(--line)',
+            borderRadius: 999,
+            padding: '4px 8px 4px 4px',
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 11, fontFamily: 'var(--font-mono)',
+          }}
         >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Users size={16} style={{ color: t.accent }} />
-              <span className="font-bold text-sm">우리 파티</span>
-            </div>
-            <ChevronRight size={16} style={{ color: t.accent }} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {data!.members.slice(0, 2).map((m) => {
-              const s = data!.scores.find((x) => x.user_id === m.id)?.score ?? 0;
-              const maxScore = Math.max(...data!.scores.map((x) => x.score), 1);
-              return (
-                <div key={m.id} className="text-left">
-                  <div className="text-[11px] opacity-60 mb-1">
-                    {m.emoji} {m.name}
-                  </div>
-                  <div className="text-xl font-black font-display" style={{ color: t.accent }}>
-                    {s}
-                  </div>
-                  <div className="h-1.5 rounded-full mt-1.5 overflow-hidden" style={{ background: `${t.accent}20` }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${(s / maxScore) * 100}%`, background: t.accent, transition: 'width 600ms' }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Link>
+          <Avatar name="유준" color="#B886D9" size={20} />
+          <span>유준 · 2h ago</span>
+        </div>
       </div>
 
-      <ShareModal open={showShareModal} onClose={() => setShowShareModal(false)} />
+      <div
+        className="scroll-y"
+        style={{
+          flex: 1,
+          padding: '16px 18px 100px',
+          background: 'var(--bg-paper)',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 }}>
+          <div>
+            <div className="eyebrow">우리 집 청결도</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
+              <span
+                className="mono tabular"
+                style={{ fontSize: 32, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' }}
+              >
+                {Math.round(score)}
+              </span>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--ink-mute)' }}>/100</span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.06em' }}>
+              STREAK
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, justifyContent: 'flex-end' }}>
+              <span className="mono tabular" style={{ fontSize: 22, fontWeight: 700 }}>14</span>
+              <span style={{ fontSize: 11, color: 'var(--ink-mute)' }}>일</span>
+              <span style={{ fontSize: 16, marginLeft: 2 }}>🔥</span>
+            </div>
+          </div>
+        </div>
+        <CleanlinessBar value={score} state={state} label={false} />
+
+        <div
+          style={{
+            marginTop: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+          }}
+        >
+          <div className="eyebrow">오늘의 할 일 · {TODAY.length}</div>
+          <button
+            onClick={() => router.push('/tasks')}
+            className="mono"
+            style={{
+              background: 'none',
+              border: 0,
+              cursor: 'pointer',
+              fontSize: 11,
+              color: 'var(--ink)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            전체 보기 →
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {TODAY.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => router.push(`/tasks/${t.id}`)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: 12,
+                background: 'var(--bg-cream)',
+                border: '1px solid var(--line-soft)',
+                borderRadius: 'var(--r-md)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+              }}
+            >
+              <TaskIcon kind={t.id} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{t.name}</div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--ink-mute)',
+                    letterSpacing: '0.04em',
+                    marginTop: 2,
+                  }}
+                >
+                  {t.who} · {t.due}
+                </div>
+              </div>
+              {t.priority === 'high' && <span className="dot dirty" />}
+              <span style={{ fontSize: 16, color: 'var(--ink-mute)' }}>›</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => router.push('/inbox')}
+          style={{
+            marginTop: 16,
+            width: '100%',
+            padding: '14px 18px',
+            background: 'var(--ink)',
+            color: 'var(--bg-cream)',
+            border: 0,
+            borderRadius: 'var(--r-md)',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
+              style={{
+                width: 28, height: 28, borderRadius: 6,
+                background: 'var(--terra)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14,
+              }}
+            >
+              ◉
+            </span>
+            <span>청소 인증하기</span>
+          </span>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--ink-mute)' }}>+15 PT</span>
+        </button>
+      </div>
     </div>
   );
 }

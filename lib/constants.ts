@@ -1,6 +1,64 @@
-import type { BadgeDefinition } from '@/types/app';
+import type { BadgeDefinition, RoomState } from '@/types/app';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
+
+// ============================================================
+// CleanMate pixel-art design system (cool sky / lavender)
+// ------------------------------------------------------------
+// Mirrored verbatim from claeanmate_ui prototype. Drives the
+// IsometricRoom and all pixel furniture sprites.
+// ============================================================
+export const STATE_LABELS: Record<RoomState, { ko: string; en: string; score: number; color: string }> = {
+  clean:    { ko: '쾌적', en: 'PRISTINE', score: 95, color: 'var(--state-clean)' },
+  ok:       { ko: '양호', en: 'STEADY',   score: 70, color: 'var(--state-ok)' },
+  dirty:    { ko: '주의', en: 'MESSY',    score: 38, color: 'var(--state-dirty)' },
+  critical: { ko: '심각', en: 'CHAOS',    score: 12, color: 'var(--state-critical)' },
+};
+
+export interface RoomPalette {
+  wall: string; wallShade: string; wallDark: string;
+  floor: string; floorDark: string; sky: string; sun: string;
+}
+
+export const PALETTE: Record<RoomState, RoomPalette> = {
+  clean:    { wall: '#A8C8E0', wallShade: '#7FA9C8', wallDark: '#5B8DB8', floor: '#D8C8B0', floorDark: '#A89880', sky: '#C5DCEC', sun: '#F2C94C' },
+  ok:       { wall: '#9BBAD0', wallShade: '#7298B5', wallDark: '#52819F', floor: '#C9B89F', floorDark: '#998870', sky: '#B8CFDF', sun: '#E0B940' },
+  dirty:    { wall: '#7A95AC', wallShade: '#5B7A93', wallDark: '#42627B', floor: '#A8987F', floorDark: '#7A6E58', sky: '#8B9EAE', sun: '#B8965A' },
+  critical: { wall: '#4F5F75', wallShade: '#384458', wallDark: '#28324A', floor: '#7A6E55', floorDark: '#544A38', sky: '#3D4A5F', sun: '#6B5A40' },
+};
+
+export type CharacterPose = 'idle' | 'cleaning' | 'wave';
+
+export interface Tweaks {
+  state: RoomState;
+  score: number;
+  pose: CharacterPose;
+  theme: 'warm' | 'cool';
+}
+
+export const TWEAK_DEFAULTS: Tweaks = {
+  state: 'ok',
+  score: 70,
+  pose: 'idle',
+  theme: 'cool',
+};
+
+export const SCORE_TO_STATE = (score: number): RoomState => {
+  if (score < 25) return 'critical';
+  if (score < 50) return 'dirty';
+  if (score < 80) return 'ok';
+  return 'clean';
+};
+
+export const STATE_TO_SCORE: Record<RoomState, number> = {
+  clean: 92,
+  ok: 70,
+  dirty: 38,
+  critical: 12,
+};
+
+// Task icon kinds rendered by <TaskIcon />
+export type TaskKind = 'floor' | 'dishes' | 'trash' | 'laundry' | 'bath' | 'bed' | 'desk' | 'window' | 'fridge';
 
 // ============================================================
 // Theme tokens for room states

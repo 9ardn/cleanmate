@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAppData } from '../_components/AppDataProvider';
 import { useAppTheme } from '../_components/useAppTheme';
-import { ShareModal } from '../_components/ShareModal';
+import { ShareModal } from '@/components/modals/ShareModal';
 import { createClient } from '@/lib/supabase/client';
 
 export default function SettingsPage() {

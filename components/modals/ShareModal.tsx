@@ -1,8 +1,8 @@
 'use client';
 
 import { Share2, Copy } from 'lucide-react';
-import { useAppData } from './AppDataProvider';
-import { useAppTheme } from './useAppTheme';
+import { useAppData } from '@/app/(app)/_components/AppDataProvider';
+import { useAppTheme } from '@/app/(app)/_components/useAppTheme';
 import { shareOrCopy, buildInviteMessage } from '@/lib/utils/share';
 
 interface ShareModalProps {

@@ -8,19 +8,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // CleanMate brand colors (warm terracotta)
-        brand: {
-          DEFAULT: '#D4824A',
-          dark: '#A35A2B',
-          light: '#F5EDE0',
-        },
-        cream: {
-          DEFAULT: '#FAF4EB',
-          dark: '#F5EDE0',
+        // Legacy brand (kept so non-migrated screens compile)
+        brand: { DEFAULT: '#D4824A', dark: '#A35A2B', light: '#F5EDE0' },
+        cream: { DEFAULT: '#FAF4EB', dark: '#F5EDE0' },
+
+        // CleanMate pixel-art palette (cool sky / lavender)
+        ink: { DEFAULT: '#1F2840', soft: '#4A5570', mute: '#8A92A8' },
+        line: { DEFAULT: '#C5CFDD', soft: '#DDE4ED' },
+        paper: '#F4F7FB',
+        surface: { DEFAULT: '#E8EEF5', deep: '#D8E2EE' },
+        moss: { DEFAULT: '#5B8DB8', deep: '#3F6F94', soft: '#BDD3E5' },
+        terra: { DEFAULT: '#B886D9', deep: '#8A5FB0', soft: '#DEC5EE' },
+        berry: '#D9627A',
+        sky: '#87C4DC',
+        gold: '#F2C94C',
+        state: {
+          clean: '#5B8DB8',
+          ok: '#F2C94C',
+          dirty: '#E8895C',
+          critical: '#D9627A',
         },
       },
       fontFamily: {
         sans: [
+          '"IBM Plex Sans KR"',
           '"Pretendard Variable"',
           'Pretendard',
           '-apple-system',
@@ -28,6 +39,7 @@ const config: Config = {
           '"Apple SD Gothic Neo"',
           'sans-serif',
         ],
+        mono: ['"IBM Plex Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
         display: ['Caveat', 'cursive'],
       },
       animation: {
